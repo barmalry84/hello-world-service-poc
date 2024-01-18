@@ -129,3 +129,11 @@ terraform init; terraform destroy
 cd ../esk
 terraform init; terraform destroy
 ```
+
+### Areas of improvement
+1. Use only terraform to install required addons.
+2. Use calculated versions from github for every PR, don't use latest version.
+3. Use more EKS node-groups, consider to use EKS on Fargate.
+4. Using IAM roles to orchestrate different levels of permissions for EKS cluster together with OIDC and RBAC. 
+5. Automation of namespaces creation outside application configuration.
+And some more ...
