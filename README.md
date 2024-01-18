@@ -4,8 +4,8 @@
 
 Following the given task, some considerations were made regarding the chosen approach. Two solutions were considered, along with other variants, as most appropriate. 
 1. Running the application as AWS ECS with Fargate is the most straightforward and easily achievable solution, especially when considering the "hello-world-services" application in isolation. ECS offers a great option for more isolated workloads utilizing containers. It can host full applications with several microservices as well. However, it is not as manageable and customizable as EKS.
-2. Running the application in AWS EKS with some addons for logs and metrics was chosen for mainly two reasons:
-	- The task mentioned that the company has many microservices. It might be a good idea to propose a central place where those can be run and managed in the same manner: AWS EKS. "hello-world-services" application can serve as a PoC, and other microservices could be migrated later on.
+2. Running the application in AWS EKS with some addons for logs and metrics. This approach was chosen by me because of mainly two reasons:
+	- In the task it is mentioned that the company has many microservices that might have some internal networkking. It might be a good idea to propose a central place where those can be run and managed in the same automated manner: AWS EKS. "hello-world-services" application can serve as a PoC, and other microservices could be migrated later on.
 	- During the interview, we talked a lot about Kubernetes, and Lotto24 is using it. Therefore, I would like to show my vision of EKS automation and deployment style rather than just fulfilling the task in isolation.
 
 ### What is in the repo and prerequisites
