@@ -1,0 +1,91 @@
+  name: Infra CI/CD
+
+  on:
+    workflow_dispatch:
+    push:
+      paths:
+        - 'terraform/**'
+
+  jobs:
+    terraform_checks:
+      name: Terraform Format, Lint
+      runs-on: ubuntu-latest
+      steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: "1.5.7"
+
+      - name: Setup AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: "eu-west-1"
+
+      - name: Terraform Format Check
+        run: |
+          cd terraform/eks
+          terraform fmt -check
+          cd ../eks_addons
+          terraform fmt -check
+
+      - name: Install tflint
+        run: |
+          wget https://github.com/terraform-linters/tflint/releases/download/v0.29.0/tflint_linux_amd64.zip
+          unzip tflint_linux_amd64.zip
+          sudo mv tflint /usr/bin/
+
+      - name: Terraform Lint Check
+        run: |
+          cd terraform/eks
+          tflint
+          cd ../eks_addons
+          tflint
+
+    terraform_apply:
+      if: github.ref == 'refs/heads/main' # This ensures apply only runs for the main branch
+      name: Terraform Apply
+      needs: terraform_checks
+      runs-on: ubuntu-latest
+      steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: "1.5.7"
+      - name: Setup AWS Credentials
+
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: "eu-west-1"
+
+      - name: Helm install and kube config
+        run: |
+          curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+          sudo apt-get install apt-transport-https --yes
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+          sudo apt-get update
+          sudo apt-get install helm
+
+      - name: Terraform Initialization
+        run: |
+          cd terraform/eks
+          terraform init
+          cd ../eks_addons
+          terraform init
+
+      - name: Terraform Apply
+        run: |
+          cd terraform/eks
+          terraform apply -auto-approve
+          cd ../eks_addons
+          aws eks --region eu-west-1 update-kubeconfig --name qa-eks-test
+          terraform apply -auto-approve
