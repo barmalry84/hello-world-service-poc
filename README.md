@@ -83,11 +83,14 @@ curl http://hello-world-service.com --resolve 'hello-world-service.com:80:EXTERN
 
 It's much easier to install everything with CI using GitHub Actions. We have two workflows for AWS resources and for application deployment. The proposed way is as follows:
 1. Fork the repo. You can use the existing one, but then you'll need to have a session with me to set the needed AWS and ECR secrets.
+3. Set needed GitHub secrets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and ECR_REPOSITORY on repo level.
 2. Push dummy changes to the Terraform folder in the main branch. It will trigger Terraform for VPC, EKS, and Addons.
 3. Push dummy changes to the application folder in the main branch. It will trigger application deployment with image builds included.
 4. Go to the AWS account and find the newly created ALB. Copy its domain name and resolve it.
 
+```bash
 dig ALB_DOMAIN_NAME
+```
 
 5. Curl hello-world-service.com through the one of external IP address.
 
@@ -96,9 +99,9 @@ curl http://hello-world-service.com --resolve 'hello-world-service.com:80:EXTERN
 ```
 
 ### Logs and metrics
-Logs are collected via cwagents and fluentbit agents installed to EKS. Logs for application could be found in Cloudwatch log group: /aws/containerinsights/qa-eks-test/application. Those could be moved to Datadog via forwarder if needed. 
+Logs are collected via cwagents and fluentbit agents installed in EKS. Logs for application could be found in Cloudwatch log group: /aws/containerinsights/qa-eks-test/application. Those could be moved to Datadog via forwarder if needed. 
 
-Cloudwatch can be also used for EKS and application metrics if they are sent in needed format. In that PoC I also include installation of prometheus and grafana to be able to see basic metrics, create alerts and dashboards. In that example Grafana is internal but could be extended via Ingress. Main stepts to see metrics:
+Cloudwatch can be also used for EKS and application metrics if they are sent in needed format. In that PoC I also include installation of prometheus and grafana to be able to see basic metrics, create alerts and dashboards. In that example Grafana is internal but could be extended via Ingress. Main steps to see metrics:
 
 1. Get grafana password: 
 ```bash
