@@ -38,36 +38,46 @@ For CI testing, engineer should have:
 1. Clone this repo locally
 2. Create AWS resources using terraform. 
 
+```bash
 cd terraform/eks
 terraform init; terraform apply
 aws eks --region eu-west-1 update-kubeconfig --name qa-eks-test
 cd ../eks_addons
 terraform init; terraform apply
+```
 
 This part creates all needed resources for VPC, EKS and EKS addons.
 
 3. Build an image.
 
+```bash
 cd application
 aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin {YOUR_ACCOUNT}.dkr.ecr.eu-west-1.amazonaws.com
 docker build -t hello-world-service .
 docker tag hello-world-service:latest {YOUR_ACCOUNT}.dkr.ecr.eu-west-1.amazonaws.com/hello-world-service:latest
 docker push {YOUR_ACCOUNT}.dkr.ecr.eu-west-1.amazonaws.com/hello-world-service:latest
+```
 
 4. Create kubernetes resources.
 
+```bash
 cd application/eks_templates
 kubectl apply -f hello-world-service.yaml
+```
 
 It will create hello-world-service and expose it externally.
 
 5. Go to AWS Accound and find newly created ALB. Copy its domain name and resolve it.
 
+```bash
 dig ALB_DOMAIN_NAME
+```
 
 6. Curl hello-world-service.com through the one of external IP address.
 
+```bash
 curl http://hello-world-service.com --resolve 'hello-world-service.com:80:EXTERNAL_IP'
+```
 
 ### CI testing steps
 
@@ -81,7 +91,9 @@ dig ALB_DOMAIN_NAME
 
 5. Curl hello-world-service.com through the one of external IP address.
 
+```bash
 curl http://hello-world-service.com --resolve 'hello-world-service.com:80:EXTERNAL_IP'
+```
 
 ### Logs and metrics
 Logs are collected via cwagents and fluentbit agents installed to EKS. Logs for application could be found in Cloudwatch log group: /aws/containerinsights/qa-eks-test/application. Those could be moved to Datadog via forwarder if needed. 
@@ -89,21 +101,28 @@ Logs are collected via cwagents and fluentbit agents installed to EKS. Logs for 
 Cloudwatch can be also used for EKS and application metrics if they are sent in needed format. In that PoC I also include installation of prometheus and grafana to be able to see basic metrics, create alerts and dashboards. In that example Grafana is internal but could be extended via Ingress. Main stepts to see metrics:
 
 1. Get grafana password: 
+```bash
 kubectl get secret --namespace monitoring grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+```
 2. Get correct prometheus endpoint for metrics (take an IP):
+```bash
 kubectl get svc/prometheus-kube-prometheus-prometheus -n monitoring
+```
 3. Expose Grafana locally:
+```bash
 kubectl port-forward svc/grafana 3000:80 -n monitoring
+```
 4. Login to http://localhost:3000/login and set known prometheus endpoint with 9090 port.
 5. Import dashboards 3119 and 6417 from grafana.com and enjoy.
 
 ### Deletion of resources
 All resources could be deleted only on the local machine so far.
 
+```bash
 aws eks --region eu-west-1 update-kubeconfig --name qa-eks-test
 kubectl destroy -f hello-world-service.yaml
 cd terraform/eks_addons
 terraform init; terraform destroy
 cd ../esk
 terraform init; terraform destroy
-
+```
